@@ -1,10 +1,12 @@
-node_modules
+node_modules/*
+!node_modules/@openzeppelin
 .env
 coverage
 coverage.json
 typechain
 typechain-types
 package-lock.json
+yarn.lock
 
 #Hardhat files
 cache

@@ -1,5 +1,5 @@
 node_modules/*
-!node_modules/@openzeppelin
+!node_modules/@openzeppelin/contracts
 .env
 coverage
 coverage.json

@@ -12,9 +12,9 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeable, ERC721BurnableUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
 
-    constructor() {
-        _disableInitializers();
-    }
+    // constructor() {
+    //     _disableInitializers();
+    // }
 
 
     function _authorizeUpgrade(address newImplementation)

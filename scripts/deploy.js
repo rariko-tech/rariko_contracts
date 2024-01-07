@@ -1,11 +1,13 @@
-const {ethers,upgrades} = require("hardhat")
+const hre = require("hardhat")
 
 const main = async () => {
   try {
 
-    const DotWAGMI = await ethers.getContractFactory("DotWAGMI")
-    const UPGRADE = await upgrades.deployProxy(DotWAGMI ,
-    ["0x5fbdb2315678afecb367f032d93f642f64180aa3"],
+    const [owner] = await ethers.getSigners();
+
+    const DotWAGMI = await hre.ethers.getContractFactory("DotWAGMI")
+    const UPGRADE = await hre.upgrades.deployProxy(DotWAGMI ,
+    [owner.address],
     {
       "initializer":"initialize",
       "kind":"uups"

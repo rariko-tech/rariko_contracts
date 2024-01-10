@@ -41,7 +41,7 @@ describe('DotWAGMI', () => {
         // Is upgradable 
         it("Is upgrading", async() => {
 
-            const {UPGRADE,owner} = await mainDeploy()
+            const {UPGRADE} = await mainDeploy()
 
             // console.log(`Main contract and Proxy Deployed`)
             // await sleep(5*1000)
@@ -51,7 +51,6 @@ describe('DotWAGMI', () => {
             const UPGRADE2 = await hre.upgrades.upgradeProxy(UPGRADE.target,DotWAGMI2)
                 
             await UPGRADE2.waitForDeployment()
-            console.log(`Proxy Contract 2 deployed at ${UPGRADE2.target}`)
 
 
             // Check new added function
@@ -63,6 +62,44 @@ describe('DotWAGMI', () => {
             const machineId = await UPGRADE2.UID()
             expect(machineId).to.equal(10001)
 
+        })
+
+    })
+
+    describe('Functions Testing', () => { 
+
+        // Properly minting function working
+        it("Is minting", async() => {
+        
+            const {UPGRADE,owner} = await mainDeploy()
+
+            await UPGRADE.setMintConditions(
+                "10000000000000000",
+                3,
+                5,
+                owner.address
+            )
+
+            const message = "Hello World!"
+            const messageHash = ethers.hashMessage(message)
+            const signature = await owner.signMessage(ethers.getBytes(messageHash));
+
+            await UPGRADE.mint(
+                "0xan",
+                "Rariko is best",
+                "xyz@gmail.com",
+                "7003335233",
+                owner.address,
+                "xyz.com",
+                signature,
+                messageHash
+            )
+
+
+            expect(await UPGRADE.tokenIdResolve(1)).to.equal("0xan")
+            expect(await UPGRADE.ownerOf(1)).to.equal(owner.address)
+            expect(await UPGRADE.userNameTaken("0xan")).to.equal(true)
+            
         })
 
     })

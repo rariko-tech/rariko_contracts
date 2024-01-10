@@ -92,11 +92,27 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
         return true;
     }
 
-    function isAuthorized(bytes32 messageHash, bytes memory sigHash) private view returns(bool) {
-        require(!usedNonces[messageHash]);
-        bytes32 ethSignedMessageHash = messageHash;
-        address resolvedAddress = ethSignedMessageHash.recover(sigHash);
-        return resolvedAddress == serverPublicAddress ;
+    function isAuthorized(bytes32 _hashedMessage, bytes memory _signature) private view returns (bool) {
+        require(!usedNonces[_hashedMessage]);
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, _hashedMessage));
+        
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        assembly {
+            r := mload(add(_signature, 32))
+            s := mload(add(_signature, 64))
+            v := byte(0, mload(add(_signature, 96)))
+        }
+
+        if (v < 27) {
+            v += 27;
+        }
+
+        address signer = ecrecover(prefixedHashMessage, v, r, s);
+        return signer == serverPublicAddress;
     }
    
     function mint(string memory username, string memory bio, string memory emailAddress, string memory phoneNo, address userAddress, string memory uri, bytes memory signature, bytes32 messageHash) public payable {
@@ -106,10 +122,10 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
         require(userLength >= minUserLength, "Too small...That's what she said too");
         require(isValidUsername(username), "Username contains invalid characters");
         uint mintTokenFee;
-        if (userLength >= freeUserLength) {
+        if (userLength <= freeUserLength) {
             mintTokenFee = 0;
         } else {
-            mintTokenFee = (freeUserLength - userLength) *  mintFee;
+            mintTokenFee = (userLength - freeUserLength) *  mintFee;
         }
         require(msg.value == mintTokenFee, "Insufficient payment for selected username");
         // string memory fullUsername = string(abi.encodePacked(username, ".wagmi"));

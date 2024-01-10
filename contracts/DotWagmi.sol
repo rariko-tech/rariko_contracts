@@ -35,11 +35,11 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
         string[] solAddresses;
     }
 
-    address internal serverPublicAddress;
-    uint internal tokenIdCount;
-    uint internal mintFee;
-    uint internal minUserLength;
-    uint internal freeUserLength;
+    address public serverPublicAddress;
+    uint public tokenIdCount;
+    uint public mintFee;
+    uint public minUserLength;
+    uint public freeUserLength;
     uint public UID; //This is used to set unique DId to each wallet group
 
     function initialize(address initialOwner) initializer public {
@@ -54,13 +54,13 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
         UID = 10000;
     }
 
-    mapping (uint => string) internal tokenIdToUsername;
-    mapping (string => uint) internal usernameToDId;
-    mapping (address => uint) internal addressToTokenId;
-    mapping (address => uint) internal addressToDId;
-    mapping (uint => userInfo) internal DIdToUser;
+    mapping (uint => string) public tokenIdToUsername;
+    mapping (string => uint) public usernameToDId;
+    mapping (address => uint) public addressToTokenId;
+    mapping (address => uint) public addressToDId;
+    mapping (uint => userInfo) public DIdToUser;
     mapping (string => bool) public userNameTaken;
-    mapping (bytes32 => bool) internal usedNonces; 
+    mapping (bytes32 => bool) public usedNonces; 
 
 
     event internalTransfer(address, address, uint);
@@ -122,10 +122,10 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
         require(userLength >= minUserLength, "Too small...That's what she said too");
         require(isValidUsername(username), "Username contains invalid characters");
         uint mintTokenFee;
-        if (userLength <= freeUserLength) {
+        if (userLength >= freeUserLength) {
             mintTokenFee = 0;
         } else {
-            mintTokenFee = (userLength - freeUserLength) *  mintFee;
+            mintTokenFee = (freeUserLength - userLength) *  mintFee;
         }
         require(msg.value == mintTokenFee, "Insufficient payment for selected username");
         // string memory fullUsername = string(abi.encodePacked(username, ".wagmi"));
@@ -148,7 +148,7 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
 
     //User profile controllers
     function addLinked(address[] memory linkedAdd, bytes memory sigHash, bytes32 mesHash) public {
-        require(isAuthorized(mesHash, sigHash), "Unauthorized mint request");
+        require(isAuthorized(mesHash, sigHash), "Unauthorized request");
         usedNonces[mesHash] = true;
         require(addressToDId[msg.sender] != 0);
         for (uint i=0; i < linkedAdd.length; i++) {
@@ -159,8 +159,8 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
         }
     }
 
-    function setNewTokenUri(string memory newURI) public onlyOwner {
-        _setTokenURI(addressToTokenId[msg.sender], newURI);
+    function setNewTokenUri(uint tokenId, string memory newURI) public onlyOwner {
+        _setTokenURI(tokenId, newURI);
     }
 
     function setDefault(address toSetDefault) public {

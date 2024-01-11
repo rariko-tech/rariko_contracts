@@ -60,7 +60,7 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
     mapping (address => uint) public addressToDId;
     mapping (uint => userInfo) public DIdToUser;
     mapping (string => bool) public userNameTaken;
-    mapping (bytes32 => bool) public usedNonces; 
+    mapping (bytes32 => bool) internal usedNonces; 
 
 
     event internalTransfer(address, address, uint);
@@ -130,16 +130,22 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
         require(msg.value == mintTokenFee, "Insufficient payment for selected username");
         // string memory fullUsername = string(abi.encodePacked(username, ".wagmi"));
         require(!userNameTaken[username] , "Username already taken");
+        uint tempUID;
+        if(addressToDId[msg.sender] == 0){
+            tempUID = UID;
+        }else{
+            tempUID = addressToDId[msg.sender];
+        }
         tokenIdCount++;
         _safeMint(msg.sender, tokenIdCount);
         usedNonces[messageHash] = true;
-        DIdToUser[UID] = userInfo(username, emailAddress, bio, phoneNo, new address[](0), userAddress, new string[] (0) );
+        DIdToUser[tempUID] = userInfo(username, emailAddress, bio, phoneNo, new address[](0), msg.sender, new string[] (0) );
         userNameTaken[username] = true;
         _setTokenURI(tokenIdCount, uri);
         tokenIdToUsername[tokenIdCount] = username;
-        setDId(msg.sender, username, tokenIdCount);
         addressToTokenId[msg.sender] = tokenIdCount;
-        addressToDId[msg.sender] = UID;
+        addressToDId[msg.sender] = tempUID;
+        setDId(msg.sender, username, tokenIdCount, false);
     }
 
     function _burn(uint256 tokenId) internal virtual override(ERC721Upgradeable) onlyOwner {
@@ -187,7 +193,7 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
     function transferHandler(address f, address t, uint256 id) internal {
         if (addressToTokenId[f] == addressToTokenId[t]) {
             emit internalTransfer(f, t, id);
-        } else if (addressToTokenId[t] ==0) {
+        } else if (addressToTokenId[t] == 0) {
            
             string memory username = tokenIdToUsername[id];
             emit externalTransfer(f,t, id, username);
@@ -196,7 +202,7 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
             addressToTokenId[prevLinked[i]] = 0;
             }
             addressToTokenId[DIdToUser[addressToDId[f]].defaultEthAddress] = 0;
-            setDId(t, username, id);
+            setDId(t, username, id, true);
         }
         else {
             revert("Error");
@@ -204,8 +210,8 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
     }
 
 
-    function setDId(address toSet, string memory usernameToSet, uint tokenIdInvolved) internal {
-        if (addressToDId[toSet] == 0) {
+    function setDId(address toSet, string memory usernameToSet, uint tokenIdInvolved, bool isTransfer) internal {
+        if (addressToDId[toSet] == 0 && !isTransfer) {
                 UID++;
                 DIdToUser[UID].defaultEthAddress = toSet;
                 DIdToUser[UID].ethAddresses = [toSet];
@@ -213,7 +219,16 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
                 usernameToDId[usernameToSet] = UID;
                 addressToTokenId[DIdToUser[addressToDId[toSet]].defaultEthAddress] = tokenIdInvolved;
             }
-            else {
+        else if (addressToDId[toSet] == 0 && isTransfer) {
+                UID++;
+                DIdToUser[UID] = DIdToUser[usernameToDId[usernameToSet]];
+                DIdToUser[UID].defaultEthAddress = toSet;
+                DIdToUser[usernameToDId[usernameToSet]] = DIdToUser[0];
+                addressToDId[toSet] = UID;
+                usernameToDId[usernameToSet] = UID;
+                addressToTokenId[DIdToUser[addressToDId[toSet]].defaultEthAddress] = tokenIdInvolved;
+            }
+        else {
                 usernameToDId[usernameToSet] = addressToDId[toSet];
                 for (uint8 i=0; i< DIdToUser[addressToDId[toSet]].ethAddresses.length; i++) {
                     addressToTokenId[DIdToUser[addressToDId[toSet]].ethAddresses[i]] = tokenIdInvolved;

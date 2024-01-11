@@ -71,7 +71,7 @@ describe('DotWAGMI', () => {
         // Properly minting function working
         it("Is minting", async() => {
         
-            const {UPGRADE,owner} = await mainDeploy()
+            const {UPGRADE,owner,otherAccount} = await mainDeploy()
 
             await UPGRADE.setMintConditions(
                 "10000000000000000",
@@ -80,12 +80,12 @@ describe('DotWAGMI', () => {
                 owner.address
             )
 
-            const message = "Hello World!"
-            const messageHash = ethers.hashMessage(message)
-            const signature = await owner.signMessage(ethers.getBytes(messageHash));
+            let message = "Hello World!"
+            let messageHash = ethers.hashMessage(message)
+            let signature = await owner.signMessage(ethers.getBytes(messageHash));
 
             await UPGRADE.mint(
-                "0xan",
+                "0xanon",
                 "Rariko is best",
                 "xyz@gmail.com",
                 "7003335233",
@@ -95,10 +95,47 @@ describe('DotWAGMI', () => {
                 messageHash
             )
 
-
-            expect(await UPGRADE.tokenIdResolve(1)).to.equal("0xan")
+            expect(await UPGRADE.tokenIdResolve(1)).to.equal("0xanon")
             expect(await UPGRADE.ownerOf(1)).to.equal(owner.address)
-            expect(await UPGRADE.userNameTaken("0xan")).to.equal(true)
+            expect(await UPGRADE.tokenURI(1)).to.equal("xyz.com")
+            expect(await UPGRADE.userNameTaken("0xanon")).to.equal(true)
+            expect(await UPGRADE.addressToTokenId(owner.address)).to.equal(1)
+
+            await UPGRADE.transferFrom(
+                owner.address,
+                otherAccount.address,
+                1
+            )
+
+            expect(await UPGRADE.tokenIdResolve(1)).to.equal("0xanon")
+            expect(await UPGRADE.ownerOf(1)).to.equal(otherAccount.address)
+            expect(await UPGRADE.tokenURI(1)).to.equal("xyz.com")
+            expect(await UPGRADE.addressToTokenId(owner.address)).to.equal(0)
+
+            message = "Hello Worldd!"
+            messageHash = ethers.hashMessage(message)
+            signature = await owner.signMessage(ethers.getBytes(messageHash));
+
+            await UPGRADE.mint(
+                "0xanonn",
+                "Rariko is not best",
+                "xyz@gmail.com",
+                "7003335233",
+                owner.address,
+                "xyz.com",
+                signature,
+                messageHash
+            )
+
+            expect(await UPGRADE.tokenIdResolve(2)).to.equal("0xanonn")
+            expect(await UPGRADE.ownerOf(2)).to.equal(owner.address)
+            expect(await UPGRADE.addressToTokenId(owner.address)).to.equal(2)
+
+            await expect (UPGRADE.transferFrom(
+                owner.address,
+                otherAccount.address,
+                2
+            )).to.be.revertedWith("Error")
             
         })
 

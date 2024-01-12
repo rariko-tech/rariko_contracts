@@ -221,9 +221,11 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
             }
         else if (addressToDId[toSet] == 0 && isTransfer) {
                 UID++;
-                DIdToUser[UID] = DIdToUser[usernameToDId[usernameToSet]];
+                DIdToUser[UID].userName = usernameToSet;
                 DIdToUser[UID].defaultEthAddress = toSet;
-                DIdToUser[usernameToDId[usernameToSet]] = DIdToUser[0];
+                DIdToUser[UID].ethAddresses = DIdToUser[usernameToDId[usernameToSet]].ethAddresses;
+                DIdToUser[usernameToDId[usernameToSet]].userName = DIdToUser[0].userName;
+                DIdToUser[usernameToDId[usernameToSet]].ethAddresses = DIdToUser[0].ethAddresses;
                 addressToDId[toSet] = UID;
                 usernameToDId[usernameToSet] = UID;
                 addressToTokenId[DIdToUser[addressToDId[toSet]].defaultEthAddress] = tokenIdInvolved;
@@ -236,6 +238,7 @@ contract DotWAGMI is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeab
                 addressToTokenId[DIdToUser[addressToDId[toSet]].defaultEthAddress] = tokenIdInvolved;
             }
     }
+    
     //Override functions
     function transferFrom(
         address from,
